@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 /* ═══════════════════════════════════════════════════
    CONFIGURATION
@@ -140,6 +140,19 @@ function shortName(name) {
 }
 
 /* ═══════════════════════════════════════════════════
+   RESPONSIVE HOOK
+═══════════════════════════════════════════════════ */
+function useIsMobile(bp = 768) {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < bp);
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < bp);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, [bp]);
+  return isMobile;
+}
+
+/* ═══════════════════════════════════════════════════
    SEAT CELL
 ═══════════════════════════════════════════════════ */
 function SeatCell({ info, stg, highlighted }) {
@@ -202,6 +215,10 @@ function SeatCell({ info, stg, highlighted }) {
    MAIN APP
 ═══════════════════════════════════════════════════ */
 export default function App() {
+  const isMobile = useIsMobile();
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 768);
+  useEffect(() => { if (!isMobile) setSidebarOpen(true); }, [isMobile]);
+
   const [students, setStudents] = useState([]);
   // seatMap: Map<"row,col,v", { name, stgId }>  — stable, only grows/shrinks
   const [seatMap,  setSeatMap]  = useState(new Map());
@@ -260,6 +277,8 @@ export default function App() {
 
   const reset = () => { setStudents([]); setSeatMap(new Map()); setText(""); };
 
+  const [listOpen, setListOpen] = useState(true);
+
   const shuffle = () => setSeatMap(assignSeats(students, new Map()));
 
   const ROW_HEADERS = [
@@ -271,18 +290,26 @@ export default function App() {
 
   return (
     <div style={{
-      display: "flex", height: "100vh", overflow: "hidden",
+      display: "flex",
+      flexDirection: isMobile ? "column" : "row",
+      height: isMobile ? "auto" : "100vh",
+      minHeight: "100vh",
+      overflow: isMobile ? "visible" : "hidden",
       background: "#060E1A", color: "#CBD5E1",
       fontFamily: "'DM Sans', 'Outfit', system-ui, sans-serif",
     }}>
 
       {/* ════════ SIDEBAR ════════ */}
       <aside style={{
-        width: 274, flexShrink: 0,
+        width: isMobile ? "100%" : 274, flexShrink: 0,
+        display: isMobile && !sidebarOpen ? "none" : "flex",
         background: "linear-gradient(180deg, #0B1626 0%, #091321 100%)",
-        borderRight: "1px solid #0F2A44",
-        display: "flex", flexDirection: "column",
-        padding: "18px 16px", gap: 16, overflowY: "auto",
+        borderRight: isMobile ? "none" : "1px solid #0F2A44",
+        borderBottom: isMobile ? "1px solid #0F2A44" : "none",
+        flexDirection: "column",
+        padding: isMobile ? "14px 14px 18px" : "18px 16px",
+        gap: 16, overflowY: "auto",
+        boxSizing: "border-box",
       }}>
         {/* Title + segmented progress */}
         <div>
@@ -383,11 +410,22 @@ export default function App() {
 
         {/* Student list */}
         {students.length > 0 && (
-          <div style={{ flex: 1, minHeight: 60, display: "flex", flexDirection: "column", gap: 6, overflow: "hidden" }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: "#3B6B8A", textTransform: "uppercase", letterSpacing: "0.12em" }}>
-              Список ({students.length})
-            </div>
-            <div style={{ overflowY: "auto", flex: 1 }}>
+          <div style={{ flex: listOpen ? 1 : "0 0 auto", minHeight: 0, display: "flex", flexDirection: "column", gap: 6, overflow: "hidden" }}>
+            <button
+              onClick={() => setListOpen(o => !o)}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                background: "none", border: "none", padding: 0, cursor: "pointer", width: "100%",
+              }}
+            >
+              <span style={{ fontSize: 12, fontWeight: 800, color: "#3B6B8A", textTransform: "uppercase", letterSpacing: "0.12em" }}>
+                Список ({students.length})
+              </span>
+              <span style={{ fontSize: 14, color: "#3B6B8A", lineHeight: 1 }}>
+                {listOpen ? "▲" : "▼"}
+              </span>
+            </button>
+            {listOpen && <div style={{ overflowY: "auto", flex: 1 }}>
               {students.map((name, i) => {
                 const loc  = getLoc(i + 1);
                 const isHL = highlight === i + 1;
@@ -440,7 +478,7 @@ export default function App() {
                   </div>
                 );
               })}
-            </div>
+            </div>}
           </div>
         )}
 
@@ -497,9 +535,28 @@ export default function App() {
       {/* ════════ CLASSROOM ════════ */}
       <main style={{
         flex: 1, display: "flex", flexDirection: "column",
-        padding: "20px 24px 24px", gap: 6, overflowY: "auto",
+        padding: isMobile ? "12px 10px 20px" : "20px 24px 24px",
+        gap: 6, overflowY: "auto",
         background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(12,36,64,0.85) 0%, #060E1A 70%)",
       }}>
+        {/* Mobile toggle */}
+        {isMobile && (
+          <button
+            onClick={() => setSidebarOpen(o => !o)}
+            style={{
+              display: "flex", alignItems: "center", gap: 8,
+              background: "#091321", border: "1px solid #0F2A44",
+              borderRadius: 8, padding: "8px 14px",
+              color: "#3B6B8A", fontSize: 14, fontWeight: 700,
+              cursor: "pointer", marginBottom: 4,
+              fontFamily: "inherit", width: "100%", textAlign: "left",
+            }}
+          >
+            <span style={{ fontSize: 16 }}>{sidebarOpen ? "✕" : "☰"}</span>
+            <span>{sidebarOpen ? "Скрыть панель" : `Управление · ${students.length} из ${MAX}`}</span>
+          </button>
+        )}
+
         {/* Blackboard */}
         <div style={{
           background: "linear-gradient(135deg, #0B2A14 0%, #0D3319 100%)",
@@ -519,13 +576,13 @@ export default function App() {
 
         {/* Row headers */}
         <div style={{ display: "flex", alignItems: "center", paddingBottom: 2 }}>
-          <div style={{ width: 44, flexShrink: 0 }} />
+          <div style={{ width: isMobile ? 28 : 44, flexShrink: 0 }} />
           {ROW_HEADERS.map((r, i) => (
             <div key={i} style={{ flex: 1, textAlign: "center" }}>
-              <div style={{ fontSize: 12, fontWeight: 800, color: "#1d4f7a", letterSpacing: "0.12em", textTransform: "uppercase" }}>
-                {r.label}
+              <div style={{ fontSize: isMobile ? 10 : 12, fontWeight: 800, color: "#1d4f7a", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                {isMobile ? ROW_ABBR[i] : r.label}
               </div>
-              <div style={{ fontSize: 11, color: "#2A5A7A", marginTop: 1 }}>{r.hint}</div>
+              {!isMobile && <div style={{ fontSize: 11, color: "#2A5A7A", marginTop: 1 }}>{r.hint}</div>}
             </div>
           ))}
         </div>
@@ -535,7 +592,7 @@ export default function App() {
           {Array.from({ length: DESKS }, (_, desk) => (
             <div key={desk}>
               {desk === 4 && (
-                <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "4px 0", paddingLeft: 44 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "4px 0", paddingLeft: isMobile ? 28 : 44 }}>
                   <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, #0A1E32 60%, transparent)" }} />
                   <span style={{ fontSize: 11.5, color: "#0F2A44", whiteSpace: "nowrap", fontWeight: 700, letterSpacing: "0.12em" }}>
                     ЗАДНЯЯ ЛИНИЯ — ПАРТА 5
@@ -545,7 +602,7 @@ export default function App() {
               )}
 
               <div style={{ display: "flex", alignItems: "stretch" }}>
-                <div style={{ width: 44, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 8 }}>
+                <div style={{ width: isMobile ? 28 : 44, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: isMobile ? 4 : 8 }}>
                   <span style={{
                     fontSize: 12, fontWeight: 800,
                     color: desk < 4 ? "#1D4E7A" : "#2A6A4A",
@@ -568,7 +625,7 @@ export default function App() {
                   return (
                     <div key={row} style={{ flex: 1, padding: "0 5px" }}>
                       <div style={{
-                        display: "flex", height: 52,
+                        display: "flex", height: isMobile ? 42 : 52,
                         border: `1px solid ${anyHL ? "#1D4E7A" : isLeft ? "#0D2540" : "#0A1E32"}`,
                         borderLeft: isLeft ? `2px solid ${anyHL ? "#3B6B8A" : "#0D2540"}` : undefined,
                         borderRadius: 8, overflow: "hidden",
