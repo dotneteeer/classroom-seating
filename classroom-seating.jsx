@@ -219,12 +219,21 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 768);
   useEffect(() => { if (!isMobile) setSidebarOpen(true); }, [isMobile]);
 
-  const [students, setStudents] = useState([]);
+  const [students, setStudents] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("cs_students")) ?? []; }
+    catch { return []; }
+  });
   // seatMap: Map<"row,col,v", { name, stgId }>  — stable, only grows/shrinks
-  const [seatMap,  setSeatMap]  = useState(new Map());
+  const [seatMap,  setSeatMap]  = useState(() => {
+    try { return new Map(JSON.parse(localStorage.getItem("cs_seatMap")) ?? []); }
+    catch { return new Map(); }
+  });
   const [text,     setText]     = useState("");
   const [highlight, setHighlight] = useState(null);
   const textareaRef = useRef(null);
+
+  useEffect(() => { localStorage.setItem("cs_students", JSON.stringify(students)); }, [students]);
+  useEffect(() => { localStorage.setItem("cs_seatMap",  JSON.stringify([...seatMap])); }, [seatMap]);
 
   // num is always derived live from the sorted students array
   const numOf = name => students.indexOf(name) + 1;
@@ -275,7 +284,11 @@ export default function App() {
     });
   };
 
-  const reset = () => { setStudents([]); setSeatMap(new Map()); setText(""); };
+  const reset = () => {
+    setStudents([]); setSeatMap(new Map()); setText("");
+    localStorage.removeItem("cs_students");
+    localStorage.removeItem("cs_seatMap");
+  };
 
   const [listOpen, setListOpen] = useState(true);
 
