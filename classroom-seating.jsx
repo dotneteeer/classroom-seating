@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useRef } from "react";
 
 /* ═══════════════════════════════════════════════════
    CONFIGURATION
@@ -8,7 +8,6 @@ import { useState, useMemo, useRef } from "react";
 const DESKS = 5;
 const MAX   = 30;
 
-// Stage order & seat coverage — total = 12+3+8+2+5 = 30
 const STAGES = [
   {
     id: 1,
@@ -68,10 +67,10 @@ const STAGES = [
 ];
 
 /* ═══════════════════════════════════════════════════
-   ALGORITHM  —  greedy max-min-distance per stage
-   Physical coords:
-     x = row * 2 + v   (rows 2 units apart; variants 1 unit apart)
-     y = col            (desks 1 unit apart front-to-back)
+   ALGORITHM
+   seatMap: Map<"row,col,v", { name, stgId }>
+   assignSeats — adds only the newNames to existingMap,
+   keeping all already-placed students in place.
 ═══════════════════════════════════════════════════ */
 function eucl(a, b) {
   const ax = a.row * 2 + a.v;
@@ -79,47 +78,48 @@ function eucl(a, b) {
   return Math.sqrt((ax - bx) ** 2 + (a.col - b.col) ** 2);
 }
 
-function computeSeating(names) {
-  const map = new Map(); // "row,col,v" → { name, num, stgId }
+const EPS = 1e-9;
+
+function pickRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function assignSeats(newNames, existingMap) {
+  const map = new Map(existingMap);
   let ni = 0;
 
   for (const stg of STAGES) {
+    if (ni >= newNames.length) break;
+
+    const skey = s => `${s.row},${s.col},${s.v}`;
     const allSeats = stg.rows.flatMap(row =>
       stg.desks.map(col => ({ row, col, v: stg.v }))
     );
-    const placed = [];
 
-    while (ni < names.length && placed.length < allSeats.length) {
-      const key   = s => `${s.row},${s.col},${s.v}`;
-      const avail = allSeats.filter(s => !map.has(key(s)));
+    while (ni < newNames.length) {
+      const avail    = allSeats.filter(s => !map.has(skey(s)));
       if (!avail.length) break;
 
-      let best = avail[0];
+      const occupied = allSeats.filter(s => map.has(skey(s)));
 
-      if (placed.length === 0) {
-        // First in stage: pick corner-like seat (max sum of distances to all others)
-        let topScore = -Infinity;
-        for (const s of avail) {
-          const score = avail.reduce((acc, o) => acc + eucl(s, o), 0);
-          if (score > topScore) { topScore = score; best = s; }
-        }
+      let best;
+      if (occupied.length === 0) {
+        // First in stage: purely random
+        best = pickRandom(avail);
       } else {
-        // Subsequent: maximise min-distance to already placed; tie-break by total distance
-        let topMin = -Infinity, topSum = -Infinity;
-        for (const s of avail) {
-          const mn = Math.min(...placed.map(p => eucl(s, p)));
-          const sm = placed.reduce((acc, p) => acc + eucl(s, p), 0);
-          if (mn > topMin || (mn === topMin && sm > topSum)) {
-            topMin = mn; topSum = sm; best = s;
-          }
-        }
+        // Find the maximum possible min-distance to occupied seats
+        const minDists  = avail.map(s => Math.min(...occupied.map(p => eucl(s, p))));
+        const maxMinDist = Math.max(...minDists);
+        // Pick randomly among all seats that achieve that maximum distance
+        const candidates = avail.filter((_, i) => minDists[i] >= maxMinDist - EPS);
+        best = pickRandom(candidates);
       }
 
-      map.set(key(best), { name: names[ni], num: ni + 1, stgId: stg.id });
-      placed.push(best);
+      map.set(skey(best), { name: newNames[ni], stgId: stg.id });
       ni++;
     }
   }
+
   return map;
 }
 
@@ -202,20 +202,30 @@ function SeatCell({ info, stg, highlighted }) {
    MAIN APP
 ═══════════════════════════════════════════════════ */
 export default function App() {
-  const [students,  setStudents]  = useState([]);
-  const [text,      setText]      = useState("");
+  const [students, setStudents] = useState([]);
+  // seatMap: Map<"row,col,v", { name, stgId }>  — stable, only grows/shrinks
+  const [seatMap,  setSeatMap]  = useState(new Map());
+  const [text,     setText]     = useState("");
   const [highlight, setHighlight] = useState(null);
   const textareaRef = useRef(null);
 
-  const seating = useMemo(() => computeSeating(students), [students]);
+  // num is always derived live from the sorted students array
+  const numOf = name => students.indexOf(name) + 1;
 
-  const getSeat     = (row, desk, v) => seating.get(`${row},${desk},${v}`);
-  const stageCount  = id => [...seating.values()].filter(v => v.stgId === id).length;
-  const stageTotal  = id => { const s = STAGES.find(x => x.id === id); return s.rows.length * s.desks.length; };
+  const getSeat = (row, desk, v) => {
+    const entry = seatMap.get(`${row},${desk},${v}`);
+    if (!entry) return null;
+    return { ...entry, num: numOf(entry.name) };
+  };
+
+  const stageCount = id => [...seatMap.values()].filter(v => v.stgId === id).length;
+  const stageTotal = id => { const s = STAGES.find(x => x.id === id); return s.rows.length * s.desks.length; };
 
   const getLoc = num => {
-    for (const [key, val] of seating) {
-      if (val.num === num) {
+    const name = students[num - 1];
+    if (!name) return null;
+    for (const [key, val] of seatMap) {
+      if (val.name === name) {
         const [row, col, v] = key.split(",").map(Number);
         const s = stageOf(row, col, v);
         return { row: row + 1, desk: col + 1, variant: v + 1, color: s?.color };
@@ -228,13 +238,29 @@ export default function App() {
     const ns = text.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean)
                    .slice(0, MAX - students.length);
     if (!ns.length) return;
-    setStudents(p => [...p, ...ns].sort((a, b) => a.localeCompare(b, "ru")));
+    const newStudents = [...students, ...ns].sort((a, b) => a.localeCompare(b, "ru"));
+    // Assign seats only for the truly new names
+    setSeatMap(prev => assignSeats(ns, prev));
+    setStudents(newStudents);
     setText("");
     textareaRef.current?.focus();
   };
 
-  const removeStudent = i => setStudents(p => p.filter((_, j) => j !== i));
-  const reset = () => { setStudents([]); setText(""); };
+  const removeStudent = i => {
+    const name = students[i];
+    setStudents(p => p.filter((_, j) => j !== i));
+    setSeatMap(prev => {
+      const next = new Map(prev);
+      for (const [k, v] of next) {
+        if (v.name === name) { next.delete(k); break; }
+      }
+      return next;
+    });
+  };
+
+  const reset = () => { setStudents([]); setSeatMap(new Map()); setText(""); };
+
+  const shuffle = () => setSeatMap(assignSeats(students, new Map()));
 
   const ROW_HEADERS = [
     { label: "Левый ряд",   hint: "эт. 1, 2, 5" },
@@ -328,16 +354,29 @@ export default function App() {
               Добавить
             </button>
             {students.length > 0 && (
-              <button
-                onClick={reset}
-                style={{
-                  border: "1px solid #3A0A0A", borderRadius: 7,
-                  background: "#1A0505", color: "#F87171",
-                  padding: "8px 12px", fontSize: 15, cursor: "pointer",
-                }}
-              >
-                Сброс
-              </button>
+              <>
+                <button
+                  onClick={shuffle}
+                  style={{
+                    border: "1px solid #1A3A1A", borderRadius: 7,
+                    background: "#0D1F0D", color: "#4ADE80",
+                    padding: "8px 10px", fontSize: 15, cursor: "pointer",
+                  }}
+                  title="Перемешать расстановку"
+                >
+                  ⟳
+                </button>
+                <button
+                  onClick={reset}
+                  style={{
+                    border: "1px solid #3A0A0A", borderRadius: 7,
+                    background: "#1A0505", color: "#F87171",
+                    padding: "8px 12px", fontSize: 15, cursor: "pointer",
+                  }}
+                >
+                  Сброс
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -354,7 +393,7 @@ export default function App() {
                 const isHL = highlight === i + 1;
                 return (
                   <div
-                    key={i}
+                    key={name}
                     onMouseEnter={() => setHighlight(i + 1)}
                     onMouseLeave={() => setHighlight(null)}
                     style={{
