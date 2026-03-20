@@ -166,14 +166,14 @@ function SeatCell({ info, stg, highlighted }) {
       {info ? (
         <>
           <span style={{
-            fontSize: 8, fontWeight: 900, color,
+            fontSize: 11, fontWeight: 900, color,
             lineHeight: 1.1, letterSpacing: "0.04em",
             fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
           }}>
             #{String(info.num).padStart(2, "0")}
           </span>
           <span style={{
-            fontSize: 9.5, color: "#E2E8F0", fontWeight: 600,
+            fontSize: 13, color: "#E2E8F0", fontWeight: 600,
             overflow: "hidden", textOverflow: "ellipsis",
             whiteSpace: "nowrap", width: "100%", textAlign: "center",
             lineHeight: 1.3, fontFamily: "'DM Sans', 'Outfit', system-ui, sans-serif",
@@ -188,7 +188,7 @@ function SeatCell({ info, stg, highlighted }) {
         </>
       ) : (
         <span style={{
-          fontSize: 9, color: "#1A3550", fontWeight: 700,
+          fontSize: 12, color: "#1A3550", fontWeight: 700,
           fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.04em",
         }}>
           {label}
@@ -228,7 +228,7 @@ export default function App() {
     const ns = text.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean)
                    .slice(0, MAX - students.length);
     if (!ns.length) return;
-    setStudents(p => [...p, ...ns]);
+    setStudents(p => [...p, ...ns].sort((a, b) => a.localeCompare(b, "ru")));
     setText("");
     textareaRef.current?.focus();
   };
@@ -236,7 +236,6 @@ export default function App() {
   const removeStudent = i => setStudents(p => p.filter((_, j) => j !== i));
   const reset = () => { setStudents([]); setText(""); };
 
-  const LABEL = { 9: "9", 10: "10", 11: "11" };
   const ROW_HEADERS = [
     { label: "Левый ряд",   hint: "эт. 1, 2, 5" },
     { label: "Центр. ряд",  hint: "эт. 1, 2, 3, 4" },
@@ -261,10 +260,10 @@ export default function App() {
       }}>
         {/* Title + segmented progress */}
         <div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: "#E2E8F0", letterSpacing: "-0.02em" }}>
+          <div style={{ fontSize: 17, fontWeight: 800, color: "#E2E8F0", letterSpacing: "-0.02em" }}>
             🏫 Класс · расстановка
           </div>
-          <div style={{ fontSize: 11, color: "#3B6B8A", marginTop: 3 }}>
+          <div style={{ fontSize: 14, color: "#3B6B8A", marginTop: 3 }}>
             {students.length} из {MAX} мест занято
           </div>
           <div style={{ marginTop: 10, height: 5, borderRadius: 3, overflow: "hidden", display: "flex", gap: 1 }}>
@@ -286,7 +285,7 @@ export default function App() {
 
         {/* Input */}
         <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-          <div style={{ fontSize: 9, fontWeight: 800, color: "#3B6B8A", textTransform: "uppercase", letterSpacing: "0.12em" }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: "#3B6B8A", textTransform: "uppercase", letterSpacing: "0.12em" }}>
             Добавить учеников
           </div>
           <textarea
@@ -300,14 +299,14 @@ export default function App() {
             style={{
               background: "#040D18", border: "1px solid #0F2A44",
               borderRadius: 7, padding: "8px 10px",
-              color: "#CBD5E1", fontSize: 12, resize: "vertical",
+              color: "#CBD5E1", fontSize: 15, resize: "vertical",
               outline: "none", fontFamily: "inherit", lineHeight: 1.55,
               transition: "border-color .2s",
             }}
             onFocus={e => e.target.style.borderColor = "#1D4E7A"}
             onBlur ={e => e.target.style.borderColor = "#0F2A44"}
           />
-          <div style={{ fontSize: 9.5, color: "#1D4E7A" }}>
+          <div style={{ fontSize: 12.5, color: "#1D4E7A" }}>
             Enter — добавить · разделитель: запятая, «;» или строка
           </div>
           <div style={{ display: "flex", gap: 7 }}>
@@ -318,7 +317,7 @@ export default function App() {
                 flex: 1, border: "none", borderRadius: 7,
                 background: "linear-gradient(135deg, #1252A0, #1D6FD4)",
                 color: "#fff", padding: "8px 0",
-                fontSize: 12, fontWeight: 700, cursor: "pointer",
+                fontSize: 15, fontWeight: 700, cursor: "pointer",
                 opacity: (!text.trim() || students.length >= MAX) ? 0.3 : 1,
                 transition: "opacity .2s, transform .1s",
                 boxShadow: "0 2px 12px rgba(29,111,212,0.3)",
@@ -334,7 +333,7 @@ export default function App() {
                 style={{
                   border: "1px solid #3A0A0A", borderRadius: 7,
                   background: "#1A0505", color: "#F87171",
-                  padding: "8px 12px", fontSize: 12, cursor: "pointer",
+                  padding: "8px 12px", fontSize: 15, cursor: "pointer",
                 }}
               >
                 Сброс
@@ -346,7 +345,7 @@ export default function App() {
         {/* Student list */}
         {students.length > 0 && (
           <div style={{ flex: 1, minHeight: 60, display: "flex", flexDirection: "column", gap: 6, overflow: "hidden" }}>
-            <div style={{ fontSize: 9, fontWeight: 800, color: "#3B6B8A", textTransform: "uppercase", letterSpacing: "0.12em" }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: "#3B6B8A", textTransform: "uppercase", letterSpacing: "0.12em" }}>
               Список ({students.length})
             </div>
             <div style={{ overflowY: "auto", flex: 1 }}>
@@ -369,21 +368,21 @@ export default function App() {
                       width: 22, height: 22, borderRadius: 5,
                       border: `1.5px solid ${loc?.color ?? "#0F2A44"}`,
                       color: loc?.color ?? "#3B6B8A",
-                      fontSize: 8.5, fontWeight: 900,
+                      fontSize: 12, fontWeight: 900,
                       display: "flex", alignItems: "center", justifyContent: "center",
                       flexShrink: 0, fontFamily: "'JetBrains Mono', monospace",
                     }}>
                       {i + 1}
                     </div>
                     <span style={{
-                      flex: 1, fontSize: 11.5, overflow: "hidden",
+                      flex: 1, fontSize: 14.5, overflow: "hidden",
                       textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#CBD5E1",
                     }} title={name}>
                       {name}
                     </span>
                     {loc && (
                       <span style={{
-                        fontSize: 8.5, color: "#1D4E7A", whiteSpace: "nowrap",
+                        fontSize: 11.5, color: "#1D4E7A", whiteSpace: "nowrap",
                         fontFamily: "'JetBrains Mono', monospace",
                       }} title={`Ряд ${loc.row}, парта ${loc.desk}, вариант ${loc.variant}`}>
                         {ROW_ABBR[loc.row - 1]}·П{loc.desk}·В{loc.variant}
@@ -394,7 +393,7 @@ export default function App() {
                       style={{
                         background: "none", border: "none",
                         color: "#1D4E7A", cursor: "pointer",
-                        fontSize: 14, padding: "0 1px", lineHeight: 1, flexShrink: 0,
+                        fontSize: 17, padding: "0 1px", lineHeight: 1, flexShrink: 0,
                       }}
                       onMouseEnter={e => e.currentTarget.style.color = "#EF4444"}
                       onMouseLeave={e => e.currentTarget.style.color = "#1D4E7A"}
@@ -408,7 +407,7 @@ export default function App() {
 
         {/* Stage legend */}
         <div style={{ borderTop: "1px solid #0F2A44", paddingTop: 14 }}>
-          <div style={{ fontSize: 9, fontWeight: 800, color: "#3B6B8A", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 10 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: "#3B6B8A", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 10 }}>
             Этапы заполнения
           </div>
           {STAGES.map((stg, idx) => {
@@ -424,7 +423,7 @@ export default function App() {
                     boxShadow: cnt > 0 ? `0 0 8px ${stg.glow}` : "none",
                   }} />
                   <span style={{
-                    fontSize: 9, fontWeight: 800, color: stg.color,
+                    fontSize: 12, fontWeight: 800, color: stg.color,
                     fontFamily: "'JetBrains Mono', monospace",
                   }}>
                     {idx + 1}
@@ -432,8 +431,7 @@ export default function App() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
-                    fontSize: 9.5, color: "#7FA8C5",
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    fontSize: 12.5, color: "#7FA8C5", lineHeight: 1.35,
                   }}>
                     {stg.desc}
                   </div>
@@ -445,7 +443,7 @@ export default function App() {
                   </div>
                 </div>
                 <span style={{
-                  fontSize: 10, fontWeight: 700, minWidth: 28, textAlign: "right",
+                  fontSize: 13, fontWeight: 700, minWidth: 28, textAlign: "right",
                   color: done ? stg.color : "#1D4E7A",
                   fontFamily: "'JetBrains Mono', monospace",
                 }}>
@@ -475,7 +473,7 @@ export default function App() {
             position: "absolute", inset: 0, opacity: 0.04,
             background: "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,1) 3px, rgba(255,255,255,1) 4px)",
           }} />
-          <span style={{ color: "#5CBA78", fontSize: 11, fontWeight: 800, letterSpacing: "0.35em", textTransform: "uppercase", position: "relative" }}>
+          <span style={{ color: "#5CBA78", fontSize: 14, fontWeight: 800, letterSpacing: "0.35em", textTransform: "uppercase", position: "relative" }}>
             Доска
           </span>
         </div>
@@ -485,10 +483,10 @@ export default function App() {
           <div style={{ width: 44, flexShrink: 0 }} />
           {ROW_HEADERS.map((r, i) => (
             <div key={i} style={{ flex: 1, textAlign: "center" }}>
-              <div style={{ fontSize: 9, fontWeight: 800, color: "#1D4E7A", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: "#1d4f7a", letterSpacing: "0.12em", textTransform: "uppercase" }}>
                 {r.label}
               </div>
-              <div style={{ fontSize: 8, color: "#0F2A44", marginTop: 1 }}>{r.hint}</div>
+              <div style={{ fontSize: 11, color: "#2A5A7A", marginTop: 1 }}>{r.hint}</div>
             </div>
           ))}
         </div>
@@ -500,7 +498,7 @@ export default function App() {
               {desk === 4 && (
                 <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "4px 0", paddingLeft: 44 }}>
                   <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, #0A1E32 60%, transparent)" }} />
-                  <span style={{ fontSize: 8.5, color: "#0F2A44", whiteSpace: "nowrap", fontWeight: 700, letterSpacing: "0.12em" }}>
+                  <span style={{ fontSize: 11.5, color: "#0F2A44", whiteSpace: "nowrap", fontWeight: 700, letterSpacing: "0.12em" }}>
                     ЗАДНЯЯ ЛИНИЯ — ПАРТА 5
                   </span>
                   <div style={{ flex: 1, height: 1, background: "linear-gradient(270deg, #0A1E32 60%, transparent)" }} />
@@ -510,7 +508,7 @@ export default function App() {
               <div style={{ display: "flex", alignItems: "stretch" }}>
                 <div style={{ width: 44, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 8 }}>
                   <span style={{
-                    fontSize: 9, fontWeight: 800,
+                    fontSize: 12, fontWeight: 800,
                     color: desk < 4 ? "#1D4E7A" : "#2A6A4A",
                     fontFamily: "'JetBrains Mono', monospace",
                   }}>
@@ -558,17 +556,17 @@ export default function App() {
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", paddingBottom: 40 }}>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: 40, marginBottom: 12, opacity: 0.3 }}>🪑</div>
-              <div style={{ fontSize: 13, color: "#1D4E7A", fontWeight: 600 }}>
+              <div style={{ fontSize: 16, color: "#1D4E7A", fontWeight: 600 }}>
                 Добавьте учеников для расстановки
               </div>
-              <div style={{ fontSize: 10, color: "#0F2A44", marginTop: 5, lineHeight: 1.7 }}>
+              <div style={{ fontSize: 13, color: "#0F2A44", marginTop: 5, lineHeight: 1.7 }}>
                 30 мест · 3 ряда · 5 парт · 2 варианта · 5 этапов
               </div>
               <div style={{ marginTop: 14, display: "inline-flex", flexDirection: "column", gap: 5, alignItems: "flex-start" }}>
                 {STAGES.map((stg, i) => (
                   <div key={stg.id} style={{ display: "flex", alignItems: "center", gap: 7 }}>
                     <div style={{ width: 18, height: 3, borderRadius: 2, background: stg.color, flexShrink: 0 }} />
-                    <span style={{ fontSize: 9.5, color: "#1D4E7A", textAlign: "left" }}>{i + 1}. {stg.desc}</span>
+                    <span style={{ fontSize: 12.5, color: "#1D4E7A", textAlign: "left" }}>{i + 1}. {stg.desc}</span>
                   </div>
                 ))}
               </div>
@@ -589,7 +587,7 @@ export default function App() {
                     background: stg.color,
                     boxShadow: cnt > 0 ? `0 0 6px ${stg.glow}` : "none",
                   }} />
-                  <span style={{ fontSize: 9.5, color: "#1D4E7A", fontFamily: "'JetBrains Mono', monospace" }}>
+                  <span style={{ fontSize: 12.5, color: "#1D4E7A", fontFamily: "'JetBrains Mono', monospace" }}>
                     Эт{i + 1}:<span style={{ color: cnt > 0 ? stg.color : "#1D4E7A" }}>{cnt}</span>/{tot}
                   </span>
                 </div>
