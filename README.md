@@ -2,6 +2,8 @@
 
 An interactive seat assignment tool for classrooms — built with React and Vite. Automatically distributes up to 30 students across 3 rows × 5 desks using a max-distance algorithm to keep students as far apart as possible.
 
+![screenshot](https://github.com/user-attachments/assets/7366f58a-b884-4bfd-9017-d8966ab3511c)
+
 ## Live Demo
 
 🔗 [Open on GitHub Pages](https://dotneteeer.github.io/classroom-seating/)
